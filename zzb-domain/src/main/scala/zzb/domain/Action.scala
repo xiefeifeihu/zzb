@@ -12,7 +12,7 @@ import scala.collection.mutable
 class Action(val name: String, val opt: AuthorizedOperator, val params: Map[String, String], val entity: Option[ValuePack[_]]) extends AllowDelay
 
 trait AllowDelay {
-  override def toString = getClass.getSimpleName.replace("$", "")
+//  override def toString = getClass.getSimpleName.replace("$", "")
 }
 
 object Action {
