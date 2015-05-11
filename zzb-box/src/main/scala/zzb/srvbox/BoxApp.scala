@@ -22,13 +22,14 @@ import spray.can.server.ServerSettings
  */
 object BoxApp extends App with Logging with EnvConfigLoader {
 
-  val (config, servicesOpts) = BoxBuilder.getSelectService(args.toList)
+  val (cfg, servicesOpts) = BoxBuilder.getSelectService(args.toList)
+  val config = cfg.resolve()
 
   //启动服务
   // todo: 解决端口绑定失败，服务不能退出的问题
   val system = ActorSystem("srvbox", config)
 
-  val boxBuilder = new BoxBuilder(system,config)
+  val boxBuilder = new BoxBuilder(system, config)
 
   //启动部署的服务
   boxBuilder.startBoxedServices(servicesOpts)
