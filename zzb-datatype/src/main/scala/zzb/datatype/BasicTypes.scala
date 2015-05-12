@@ -217,10 +217,13 @@ object TDateTime extends TDateTime {
   val init: Option[DateTime] = None
 
   def tryParse(dateTimeStr: String, pf: SimpleDateFormat) = {
-    try Some(new DateTime(pf.parse(dateTimeStr).getTime))
-    catch {
-      case e: Throwable =>
-        None
+    if (dateTimeStr == null || dateTimeStr.isEmpty || pf == null) None
+    else {
+      try Some(new DateTime(pf.parse(dateTimeStr).getTime))
+      catch {
+        case e: Throwable =>
+          None
+      }
     }
   }
 
