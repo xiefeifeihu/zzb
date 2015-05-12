@@ -62,9 +62,9 @@ object BoxBuilder extends EnvConfigLoader with Logging {
     val selectService = if (args != Nil) args.tail else Nil
     var config = loadConfig(mainConfigFile).getOrElse(
       throw new NotResolved(s" Not found config file '$mainConfigFile.conf' ")
-    )
+    ).resolve()
     //配置文件检查
-    val servicesOpts = mutable.Map[String,ServiceOption]()
+    val servicesOpts = mutable.Map[String, ServiceOption]()
 
     val boxConfig = config.getConfig("services")
     //装载缺省值配置,缺省值配置文件在资源包中
@@ -81,9 +81,9 @@ object BoxBuilder extends EnvConfigLoader with Logging {
     for (serviceName ← exeService) {
       val serviceConfig = boxConfig.getConfig(serviceName).withFallback(defaultServiceConfig) //提取主配置中的服务配置信息
 
-      val serviceOwnConfig = loadConfig(serviceName,withSysConfig = false).getOrElse(serviceConfig) //装载服务单独的配置信息，没有就用主配置中的
+      val serviceOwnConfig = loadConfig(serviceName, withSysConfig = false).getOrElse(serviceConfig) //装载服务单独的配置信息，没有就用主配置中的
 
-      val mergedServiceConfig = serviceOwnConfig.withFallback(serviceConfig) //合并两个配置为最终的服务配置，服务独立配置文件的信息优先采用
+      val mergedServiceConfig = serviceOwnConfig.withFallback(serviceConfig).resolve() //合并两个配置为最终的服务配置，服务独立配置文件的信息优先采用
 
       config = config.withValue(s"services.$serviceName", mergedServiceConfig.root()) //将合并后的额配置置入主配置
 

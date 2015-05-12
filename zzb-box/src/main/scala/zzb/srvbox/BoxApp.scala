@@ -22,8 +22,7 @@ import spray.can.server.ServerSettings
  */
 object BoxApp extends App with Logging with EnvConfigLoader {
 
-  val (cfg, servicesOpts) = BoxBuilder.getSelectService(args.toList)
-  val config = cfg.resolve()
+  val (config, servicesOpts) = BoxBuilder.getSelectService(args.toList)
 
   //启动服务
   // todo: 解决端口绑定失败，服务不能退出的问题
