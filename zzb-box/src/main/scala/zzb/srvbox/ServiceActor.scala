@@ -40,7 +40,7 @@ class ServiceActor extends Actor with ActorLogging with EnvConfigLoader {
 
     case "start" ⇒
       if (service == null) {
-        val config = loadConfig(name).get.withValue("box.service-name", ConfigValueFactory.fromAnyRef(name))
+        val config = loadConfig(name).get.withValue("box.service-name", ConfigValueFactory.fromAnyRef(name)).resolve()
         val theSystem = useSystem(config)
         service = Class.forName(className).getConstructor(
           classOf[ActorSystem], classOf[Config]).newInstance(theSystem, config).asInstanceOf[BoxedService]
