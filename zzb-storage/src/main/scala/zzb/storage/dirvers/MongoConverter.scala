@@ -19,7 +19,9 @@ object MongoConverter {
   def read(o: DBObject, dtp: DataType[_]): ValuePack[_] = {
     (o, dtp) match {
       case (dbo: BasicDBObject, d: TStruct) =>
-        val fieldValues = o.keySet().asScala.filter(field => d.theFieldMap.contains(field)).map(k => k -> o.get(k)).map {
+        val fieldValues = o.keySet().asScala.filter(field =>
+          d.theFieldMap.contains(field)).map(kk =>
+          kk -> o.get(kk)).toMap.map {
           case (k, v: DBObject) =>
             k -> read(v, d.theFieldMap(k))
           case (k, v) =>
@@ -37,7 +39,7 @@ object MongoConverter {
               case datatype: TBigDecimal => datatype.parse(v.toString)
               case datatype => datatype.AnyToPack(v).orNull
             })
-        }.toMap
+        }
         d.makeValuePack(fieldValues)
       case (dbList: BasicDBList, d: TPackList[ValuePack[Any]]) =>
         val itemDt = d.itemDataType
@@ -55,6 +57,16 @@ object MongoConverter {
       case (dbo: BasicDBObject, d: TEnum) =>
         val idx = dbo.get("idx").asInstanceOf[Int]
         d.int2EnumPack(idx)
+      case (dbo: BasicDBObject, d: TProperty) =>
+        val itemDt = d.valueDataType
+        val iv = dbo.keySet().asScala.toList.map { k =>
+          k -> (dbo.get(k) match {
+            case dbobj: String =>
+              TVariant.Pack(Variant(dbobj))
+          })
+        }.toMap
+        val res = d.apply(iv)
+        res
       case (dbo: BasicDBObject, d: TStrKeyPackMap[ValuePack[_]]) =>
         val itemDt = d.valueDataType
         val iv = dbo.keySet().asScala.toList.map { k =>
@@ -92,6 +104,9 @@ object MongoConverter {
       case dt: TMono[_] =>
         val mp = pack.asInstanceOf[TMono[Any]#Pack]
         MongoDBObject(mp.dataType.t_code_ -> mp.value)
+      //      case TVariant =>
+      //        val mp = pack.asInstanceOf[TVariant.Pack]
+      //        MongoDBObject(mp.dataType.t_code_ -> mp.value.inner)
       case dt: TPackList[ValuePack[_]] =>
         val lp = pack.asInstanceOf[TPackList[ValuePack[_]]#Pack]
         val nd = lp.value.map(d => write(d)).flatMap(d => d.keySet().asScala.toList.map(d.get))
@@ -99,6 +114,13 @@ object MongoConverter {
       case dt: TList[_] =>
         val lp = pack.asInstanceOf[TList[Any]#Pack]
         MongoDBObject(lp.dataType.t_code_ -> MongoDBList(lp.value: _*))
+      case dt: TProperty =>
+        val mp = pack.asInstanceOf[TProperty.Pack]
+        val nd = mp.value.map {
+          case (k, v) =>
+            k -> v.value.inner
+        }
+        if (nd.isEmpty) MongoDBObject.empty else MongoDBObject(pack.dataType.t_code_ -> nd)
       case dt: TStrKeyPackMap[ValuePack[_]] =>
         val mp = pack.asInstanceOf[TStrKeyPackMap[ValuePack[_]]#Pack]
         val nd = mp.value.map {

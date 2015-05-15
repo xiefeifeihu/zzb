@@ -131,6 +131,8 @@ object HomeInfo extends TStorable[String, ID.type] {
 
   val vips = FieldMap(TStrKeyMap[Boolean]("vips", "记录乘客是否为vip"))
 
+  /** 杂项 */
+  val misc = FieldMap(TProperty("misc", "杂项"), default = TProperty.empty)
 
 }
 
@@ -146,7 +148,7 @@ object HomeInfoError extends TStorable[String, ID.type] {
 
 }
 
-object TrackMap extends TStrKeyPackMap[TrackInfo.Pack]{
+object TrackMap extends TStrKeyPackMap[TrackInfo.Pack] {
   override def valueDataType: DataType[Any] = TrackInfo
 
   override val km: ClassTag[_] = classTag[String]
