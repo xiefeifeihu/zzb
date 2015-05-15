@@ -212,14 +212,14 @@ object TDateTime extends TDateTime {
     "yyyy-MM-dd'T'HH:mm:ss.SSSZZ" ::
     Nil
 
-  val defaultPatterns = pattens.distinct.map(new SimpleDateFormat(_))
+  val defaultPatterns = pattens.distinct.map(s => s -> DateTimeFormat.forPattern(s))
 
   val init: Option[DateTime] = None
 
-  def tryParse(dateTimeStr: String, pf: SimpleDateFormat) = {
+  def tryParse(dateTimeStr: String, pf: DateTimeFormatter) = {
     if (dateTimeStr == null || dateTimeStr.isEmpty || pf == null) None
     else {
-      try Some(new DateTime(pf.parse(dateTimeStr).getTime))
+      try Some(pf.parseDateTime(dateTimeStr))
       catch {
         case e: Throwable =>
           None
@@ -227,7 +227,7 @@ object TDateTime extends TDateTime {
     }
   }
 
-  def parseFirstSuccess(pts: List[SimpleDateFormat], dateTimeStr: String): Option[DateTime] = {
+  def parseFirstSuccess(pts: List[DateTimeFormatter], dateTimeStr: String): Option[DateTime] = {
     for (p <- pts) {
       val d = tryParse(dateTimeStr, p)
       if (d.isDefined) return d
@@ -235,8 +235,9 @@ object TDateTime extends TDateTime {
     None
   }
 
-  def string2DateTime(dateTimeStr: String)(implicit pattern: String = ""): Option[DateTime] = {
-    val pts = (if (pattern.length > 0 && !pattens.contains(pattern)) new SimpleDateFormat(pattern) :: defaultPatterns else defaultPatterns).distinct
+  def string2DateTime(dateTimeStr: String)(implicit pattern: String = ""): Option[DateTime] = {         //优先使用参数传入的pattern解析
+    val pts = if (pattern.trim.isEmpty) defaultPatterns.map(_._2) else defaultPatterns.find(_._1 == pattern).map(_._2).getOrElse(DateTimeFormat.forPattern(pattern)) :: defaultPatterns.filterNot(_._1 == pattern).map(_._2)
+//    defaultPatterns.toMap.getOrElse(pattern, DateTimeFormat.forPattern(pattern)) :: defaultPatterns.filterNot(_._1 == pattern).map(_._2)
     parseFirstSuccess(pts, dateTimeStr)
   }
 
