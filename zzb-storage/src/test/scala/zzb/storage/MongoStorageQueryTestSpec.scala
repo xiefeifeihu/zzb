@@ -96,7 +96,7 @@ trait MongoStorageBehaviors extends DBObjectHelper {
       assert(u2.version === 0)
       assert(u3.version === 0)
 
-      val u1Saved = u1  //storage.save(u1).await
+      val u1Saved = storage.save(u1).await
       val u2Saved = storage.save(u2).await
       val u3Saved = storage.save(u3).await
 

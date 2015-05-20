@@ -46,7 +46,11 @@ abstract class MongoDriver[K, KT <: DataType[K], T <: TStorable[K, KT]](delay: I
     import scala.collection.JavaConverters._
     val dbObject = MongoDBObject(odb.keySet().asScala.map(k => k -> odb.get(k)).toList)
     val uuid_key = MongoDBObject(keyCode -> key.toString)
-    clocking("建索引")(collection(_.createIndex(MongoDBObject(keyCode -> 1), MongoDBObject("name" -> s"key_$keyCode"))))  //重复建索引时会自动忽略
+    clocking("建索引")(collection { col =>
+      if (!col.getIndexInfo.exists(_.get("name") == s"key_$keyCode")) {
+        col.createIndex(MongoDBObject(keyCode -> 1), MongoDBObject("name" -> s"key_$keyCode"))
+      }
+    })
     val cnt = clocking("put时先查询是否已存在{}={}的记录", keyCode, key.toString)(collection(_.getCount(uuid_key)))
     if (cnt == 0) clocking(s"put时插入{}={}的记录", keyCode, key.toString)(collection(_.insert(dbObject)))
     else clocking(s"put时更新{}={}的记录", keyCode, key.toString)(collection(_.update(uuid_key, dbObject)))
