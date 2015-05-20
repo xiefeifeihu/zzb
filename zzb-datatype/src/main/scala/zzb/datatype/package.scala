@@ -28,20 +28,28 @@ package object datatype {
   implicit def structField2InStructPath(field: StructField): NestedStructFields = field().path
 
   def boxedType(rtClass: Class[_]) = rtClass match {
-    case java.lang.Byte.TYPE => Class.forName("java.lang.Byte")
-    case java.lang.Short.TYPE => Class.forName("java.lang.Short")
-    case java.lang.Character.TYPE => Class.forName("java.lang.Character")
-    case java.lang.Integer.TYPE => Class.forName("java.lang.Integer")
-    case java.lang.Long.TYPE => Class.forName("java.lang.Long")
-    case java.lang.Float.TYPE => Class.forName("java.lang.Float")
-    case java.lang.Double.TYPE => Class.forName("java.lang.Double")
-    case java.lang.Boolean.TYPE => Class.forName("java.lang.Boolean")
+    case java.lang.Byte.TYPE => //  Class.forName("java.lang.Byte")
+      classOf[java.lang.Byte]
+    case java.lang.Short.TYPE => // Class.forName("java.lang.Short")
+      classOf[java.lang.Short]
+    case java.lang.Character.TYPE => // Class.forName("java.lang.Character")
+      classOf[java.lang.Character]
+    case java.lang.Integer.TYPE => //  Class.forName("java.lang.Integer")
+      classOf[java.lang.Integer]
+    case java.lang.Long.TYPE => //  Class.forName("java.lang.Long")
+      classOf[java.lang.Long]
+    case java.lang.Float.TYPE => //   Class.forName("java.lang.Float")
+      classOf[java.lang.Float]
+    case java.lang.Double.TYPE => //  Class.forName("java.lang.Double")
+      classOf[java.lang.Double]
+    case java.lang.Boolean.TYPE => // Class.forName("java.lang.Boolean")
+      classOf[java.lang.Boolean]
     case rtc => rtc
   }
 
-  implicit def packToOption(pack :ValuePack[_]): Option[ValuePack[_]] = Some(pack)
+  implicit def packToOption(pack: ValuePack[_]): Option[ValuePack[_]] = Some(pack)
 
-  implicit def structValueToPackList(v: StructValue): List[Some[ValuePack[Any]]] =  v.values.values.map(Some(_)).toList
+  implicit def structValueToPackList(v: StructValue): List[Some[ValuePack[Any]]] = v.values.values.map(Some(_)).toList
 
   //implicit def singlePackToSeq(packOpt :Option[ValuePack[_]]): Seq[Option[ValuePack[_]]] = List(packOpt)
 
@@ -153,54 +161,61 @@ package object datatype {
     }
   }
 
-  class MonoTrans[VT,DT<:TMono[VT]]( field: () => DT)(implicit m: ClassTag[VT]){
+  class MonoTrans[VT, DT <: TMono[VT]](field: () => DT)(implicit m: ClassTag[VT]) {
     def :=(value: VT) = Some(field().apply(value))
+
     def :=(value: Option[_]) = value match {
-      case Some(v) if boxedType(m.runtimeClass).isInstance(v)  => Some(field().apply(v.asInstanceOf[VT]))
-      case Some(v:DT#Pack) if v.value != null  => Some(field().apply(v.value))
+      case Some(v) if boxedType(m.runtimeClass).isInstance(v) => Some(field().apply(v.asInstanceOf[VT]))
+      case Some(v: DT#Pack) if v.value != null => Some(field().apply(v.value))
       case None => None
     }
+
     def :=(value: DT#Pack) = Some(field().apply(value.value))
   }
 
-  implicit class PrimitiveTrans[VT,OT,DT<:TMono[VT]]( field: () => DT)(implicit m: ClassTag[VT],o: ClassTag[VT],f:OT => VT){
+  implicit class PrimitiveTrans[VT, OT, DT <: TMono[VT]](field: () => DT)(implicit m: ClassTag[VT], o: ClassTag[VT], f: OT => VT) {
     def :=(value: VT) = Some(field().apply(value))
+
     def :=(value: OT) = Option(value).map(field().apply(_))
+
     def :=(value: Option[_]) = value match {
-      case Some(v) if  boxedType(m.runtimeClass).isInstance(v)  => Option(v.asInstanceOf[VT]).map(field().apply)
-      case Some(v:DT#Pack)  => Option(v.value).map(field().apply)
+      case Some(v) if boxedType(m.runtimeClass).isInstance(v) => Option(v.asInstanceOf[VT]).map(field().apply)
+      case Some(v: DT#Pack) => Option(v.value).map(field().apply)
       case _ => None
     }
+
     def :=(value: DT#Pack) = Some(field().apply(value.value))
   }
 
-  implicit class TStringFieldTrans(field: () => TString) extends MonoTrans[String,TString](field)
+  implicit class TStringFieldTrans(field: () => TString) extends MonoTrans[String, TString](field)
 
-  implicit class TIntFieldTrans(field: () => TInt) extends PrimitiveTrans[Int,Integer,TInt](field)
+  implicit class TIntFieldTrans(field: () => TInt) extends PrimitiveTrans[Int, Integer, TInt](field)
 
-  implicit class TLongFieldTrans(field: () => TLong) extends PrimitiveTrans[Long,java.lang.Long,TLong](field)
+  implicit class TLongFieldTrans(field: () => TLong) extends PrimitiveTrans[Long, java.lang.Long, TLong](field)
 
-  implicit class TByteFieldTrans(field: () => TByte) extends PrimitiveTrans[Byte,java.lang.Byte,TByte](field)
+  implicit class TByteFieldTrans(field: () => TByte) extends PrimitiveTrans[Byte, java.lang.Byte, TByte](field)
 
-  implicit class TShortFieldTrans(field: () => TShort) extends PrimitiveTrans[Short,java.lang.Short,TShort](field)
+  implicit class TShortFieldTrans(field: () => TShort) extends PrimitiveTrans[Short, java.lang.Short, TShort](field)
 
-  implicit class TFloatFieldTrans(field: () => TFloat) extends PrimitiveTrans[Float,java.lang.Float,TFloat](field)
+  implicit class TFloatFieldTrans(field: () => TFloat) extends PrimitiveTrans[Float, java.lang.Float, TFloat](field)
 
-  implicit class TDoubleFieldTrans(field: () => TDouble) extends PrimitiveTrans[Double,java.lang.Double,TDouble](field)
+  implicit class TDoubleFieldTrans(field: () => TDouble) extends PrimitiveTrans[Double, java.lang.Double, TDouble](field)
 
-  implicit class TBooleanFieldTrans(field: () => TBoolean) extends PrimitiveTrans[Boolean,java.lang.Boolean,TBoolean](field)
+  implicit class TBooleanFieldTrans(field: () => TBoolean) extends PrimitiveTrans[Boolean, java.lang.Boolean, TBoolean](field)
 
-  implicit class TBigDecimalFieldTrans(field: () => TBigDecimal) extends MonoTrans[BigDecimal,TBigDecimal](field)
+  implicit class TBigDecimalFieldTrans(field: () => TBigDecimal) extends MonoTrans[BigDecimal, TBigDecimal](field)
 
-  implicit class TEnumFieldTrans[DT<:TEnum](field: () => DT)(implicit f :Int => DT#Pack) {
+  implicit class TEnumFieldTrans[DT <: TEnum](field: () => DT)(implicit f: Int => DT#Pack) {
 
     def :=(idx: Int) = Some(f(idx))
+
     def :=(idx: Integer) = Option(idx).map(i => f(i.intValue()))
   }
 
   import com.github.nscala_time.time.Imports._
-  implicit class TDateTimeFieldTrans(field: () => TDateTime) extends MonoTrans[DateTime,TDateTime](field)
-  
+
+  implicit class TDateTimeFieldTrans(field: () => TDateTime) extends MonoTrans[DateTime, TDateTime](field)
+
 
   private val datePatterns = "yyyy-MM-dd HH:mm:ss" ::
     "yyyy-MM-dd" ::

@@ -4,7 +4,7 @@ import spray.http.HttpHeaders.Host
 import spray.http.Uri
 import zzb.datatype.TMono
 import scala.annotation.tailrec
-import scala.reflect.{ classTag, ClassTag }
+import scala.reflect.{classTag, ClassTag}
 import zzb.rest._
 import scala.Some
 
@@ -19,13 +19,17 @@ trait RestMessage {
   type Self <: RestMessage
 
   def message: Self
+
   def isRequest: Boolean
+
   def isResponse: Boolean
 
   def headers: List[RestHeader]
+
   def entity: RestEntity
 
   def withHeaders(headers: RestHeader*): Self = withHeaders(headers.toList)
+
   def withDefaultHeaders(defaultHeaders: List[RestHeader]) = {
     @tailrec def patch(remaining: List[RestHeader], result: List[RestHeader] = headers): List[RestHeader] =
       remaining match {
@@ -35,14 +39,18 @@ trait RestMessage {
       }
     withHeaders(patch(defaultHeaders))
   }
+
   def withHeaders(headers: List[RestHeader]): Self
+
   def withEntity(entity: RestEntity): Self
+
   def withHeadersAndEntity(headers: List[RestHeader], entity: RestEntity): Self
 
   //  /** Returns the start part for this message */
   //  def chunkedMessageStart: HttpMessageStart
 
   def mapHeaders(f: List[RestHeader] ⇒ List[RestHeader]): Self = withHeaders(f(headers))
+
   def mapEntity(f: RestEntity ⇒ RestEntity): Self = withEntity(f(entity))
 
   //  /**
@@ -54,7 +62,7 @@ trait RestMessage {
   //    case None    ⇒ HttpEncodings.identity
   //  }
 
-  def header[T <: RestHeader: ClassTag]: Option[T] = {
+  def header[T <: RestHeader : ClassTag]: Option[T] = {
     val erasure = classTag[T].runtimeClass
     @tailrec def next(headers: List[RestHeader]): Option[T] =
       if (headers.isEmpty) None
@@ -84,8 +92,11 @@ case class RestRequest(method: RestMethod = RestMethods.GET,
   require(!uri.isEmpty, "An RestRequest must not have an empty Uri")
 
   type Self = RestRequest
+
   def message = this
+
   def isRequest = true
+
   def isResponse = false
 
   def withEffectiveUri(securedConnection: Boolean, defaultHostHeader: Host = Host.empty): RestRequest = {
@@ -94,9 +105,9 @@ case class RestRequest(method: RestMethod = RestMethods.GET,
       def fail(detail: String) =
         sys.error("Cannot establish effective request URI of " + this + ", request has a relative URI and " + detail)
       val Host(host, port) = hostHeader match {
-        case None                 ⇒ if (defaultHostHeader.isEmpty) fail("is missing a `Host` header") else defaultHostHeader
+        case None ⇒ if (defaultHostHeader.isEmpty) fail("is missing a `Host` header") else defaultHostHeader
         case Some(x) if x.isEmpty ⇒ if (defaultHostHeader.isEmpty) fail("an empty `Host` header") else defaultHostHeader
-        case Some(x)              ⇒ x
+        case Some(x) ⇒ x
       }
       copy(uri = uri.toEffectiveHttpRequestUri(Uri.Host(host), port, securedConnection))
     } else // http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-22#section-5.4
@@ -108,6 +119,7 @@ case class RestRequest(method: RestMethod = RestMethods.GET,
   def withHeaders(headers: List[RestHeader]) = if (headers eq this.headers) this else copy(headers = headers)
 
   def withEntity(entity: RestEntity) = if (entity eq this.entity) this else copy(entity = entity)
+
   def withHeadersAndEntity(headers: List[RestHeader], entity: RestEntity) =
     if ((headers eq this.headers) && (entity eq this.entity)) this else copy(headers = headers, entity = entity)
 
@@ -120,11 +132,15 @@ case class RestResponse(status: StatusCode = StatusCodes.OK,
   type Self = RestResponse
 
   def message = this
+
   def isRequest = false
+
   def isResponse = true
 
   def withHeaders(headers: List[RestHeader]) = if (headers eq this.headers) this else copy(headers = headers)
+
   def withEntity(entity: RestEntity) = if (entity eq this.entity) this else copy(entity = entity)
+
   def withHeadersAndEntity(headers: List[RestHeader], entity: RestEntity) =
     if ((headers eq this.headers) && (entity eq this.entity)) this else copy(headers = headers, entity = entity)
 }
@@ -134,15 +150,23 @@ object RestResponse {
                              notOk: RestResponse ⇒ Throwable = r ⇒ new RequestFailed(r, if (r.entity.nonEmpty) r.entity.asString else ""),
                              m: ClassTag[T]): T = {
     def boxedType(rtClass: Class[_]) = rtClass match {
-      case java.lang.Byte.TYPE      ⇒ Class.forName("java.lang.Byte")
-      case java.lang.Short.TYPE     ⇒ Class.forName("java.lang.Short")
-      case java.lang.Character.TYPE ⇒ Class.forName("java.lang.Character")
-      case java.lang.Integer.TYPE   ⇒ Class.forName("java.lang.Integer")
-      case java.lang.Long.TYPE      ⇒ Class.forName("java.lang.Long")
-      case java.lang.Float.TYPE     ⇒ Class.forName("java.lang.Float")
-      case java.lang.Double.TYPE    ⇒ Class.forName("java.lang.Double")
-      case java.lang.Boolean.TYPE   ⇒ Class.forName("java.lang.Boolean")
-      case rtc                      ⇒ rtc
+      case java.lang.Byte.TYPE ⇒ //   Class.forName("java.lang.Byte")
+        classOf[java.lang.Byte]
+      case java.lang.Short.TYPE ⇒ //  Class.forName("java.lang.Short")
+        classOf[java.lang.Short]
+      case java.lang.Character.TYPE ⇒ //  Class.forName("java.lang.Character")
+        classOf[java.lang.Character]
+      case java.lang.Integer.TYPE ⇒ //  Class.forName("java.lang.Integer")
+        classOf[java.lang.Integer]
+      case java.lang.Long.TYPE ⇒ //  Class.forName("java.lang.Long")
+        classOf[java.lang.Long]
+      case java.lang.Float.TYPE ⇒ //  Class.forName("java.lang.Float")
+        classOf[java.lang.Float]
+      case java.lang.Double.TYPE ⇒ //  Class.forName("java.lang.Double")
+        classOf[java.lang.Double]
+      case java.lang.Boolean.TYPE ⇒ //  Class.forName("java.lang.Boolean")
+        classOf[java.lang.Boolean]
+      case rtc ⇒ rtc
     }
     if (r.status != StatusCodes.OK) throw notOk(r)
     if (r.entity.isEmpty) throw ResponseNonEntity(r)
@@ -160,6 +184,7 @@ object RestResponse {
       trans(data)
     }
   }
+
   def toOrElse[T](r: RestResponse, default: ⇒ T)(implicit m: Manifest[T], trans: PartialFunction[Any, T] = null): T = {
     try {
       to[T](r)
@@ -168,16 +193,18 @@ object RestResponse {
         default
     }
   }
+
   def toOrElseForStatus[T](r: RestResponse, default: ⇒ T,
                            forStatus: StatusCode ⇒ Boolean)(implicit m: Manifest[T], trans: PartialFunction[Any, T] = null): T = {
     try {
       to[T](r)
     } catch {
       case e: RequestFailed if forStatus(e.res.status) ⇒ default
-      case e: Throwable                                ⇒ throw e
+      case e: Throwable ⇒ throw e
     }
 
   }
+
   def toOrElseInStatus[T](r: RestResponse, default: ⇒ T,
                           inStatus: StatusCode*)(implicit m: Manifest[T], trans: PartialFunction[Any, T] = null): T = {
 
@@ -191,5 +218,7 @@ object RestResponse {
 }
 
 case class RequestFailed(res: RestResponse, msg: String) extends Exception(msg)
+
 case class ResponseNonEntity(res: RestResponse) extends Exception
+
 case class ResponseWrongType(res: RestResponse, msg: String) extends Exception(msg)
